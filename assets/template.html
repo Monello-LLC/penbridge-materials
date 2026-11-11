@@ -20,6 +20,7 @@
       :root {
         --navy: #001e43;
         --blue: #014099;
+        --key: var(--blue);
         --navy-mark: #002858;
         --yellow: #ffc810;
         --red: #d9121b;
@@ -27,6 +28,7 @@
         --body: #333333;
         --muted: #626264;
         --line: #d6d9e0;
+        --line-strong: #a3a9b8;
         --mist: #f4f5fa;
         --sans: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
         --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
@@ -167,7 +169,7 @@
 
       .slide > h2 {
         margin-top: 2mm;
-        color: var(--blue);
+        color: var(--key);
         font-size: 36px;
         font-weight: 700;
         line-height: 1.4;
@@ -231,7 +233,7 @@
 
       .cover h1,
       .doc-head h1 {
-        color: var(--blue);
+        color: var(--key);
         font-size: 48px;
         font-weight: 700;
         line-height: 1.4;
@@ -266,7 +268,7 @@
       .chapter {
         justify-content: center;
         padding: 20mm 28mm;
-        background: var(--blue);
+        background: var(--key);
         color: #fff;
       }
 
@@ -312,7 +314,7 @@
       }
 
       .toc .number {
-        color: var(--blue);
+        color: var(--key);
         font-weight: 700;
       }
 
@@ -341,7 +343,7 @@
         place-items: center;
         width: 11mm;
         height: 11mm;
-        background: var(--blue);
+        background: var(--key);
         color: #fff;
         font-size: 22px;
         font-weight: 700;
@@ -359,7 +361,7 @@
 
       .points h3,
       .cards h3 {
-        color: var(--blue);
+        color: var(--key);
         font-size: 24px;
         font-weight: 700;
         line-height: 1.5;
@@ -390,7 +392,7 @@
         content: counter(card);
         display: block;
         margin-bottom: 1mm;
-        color: var(--blue);
+        color: var(--key);
         font-size: 45px;
         font-weight: 700;
         line-height: 1.4;
@@ -428,13 +430,13 @@
         top: 50%;
         right: -5.2mm;
         border: 2.2mm solid transparent;
-        border-left: 3mm solid var(--blue);
+        border-left: 3mm solid var(--key);
         translate: 0 -50%;
       }
 
       .steps h3 {
         margin-top: 1mm;
-        color: var(--blue);
+        color: var(--key);
         font-size: 22px;
         font-weight: 700;
         line-height: 1.5;
@@ -462,15 +464,15 @@
       }
 
       .table thead th {
-        background: var(--blue);
-        border-color: var(--blue);
+        background: var(--key);
+        border-color: var(--key);
         color: #fff;
         font-weight: 700;
       }
 
       .table tbody th {
         background: var(--mist);
-        color: var(--blue);
+        color: var(--key);
         font-weight: 700;
         white-space: nowrap;
       }
@@ -495,7 +497,7 @@
 
       .say li {
         margin-top: 3mm;
-        color: var(--blue);
+        color: var(--key);
         font-size: 22px;
         font-weight: 700;
         line-height: 1.5;
@@ -529,7 +531,7 @@
       }
 
       .do h3 {
-        background: var(--blue);
+        background: var(--key);
       }
 
       .dont h3 {
@@ -557,7 +559,7 @@
         left: 0.5mm;
         width: 4.6mm;
         height: 4.6mm;
-        border: 0.8mm solid var(--blue);
+        border: 0.8mm solid var(--key);
         border-radius: 50%;
       }
 
@@ -598,7 +600,7 @@
 
       .group-name {
         margin-bottom: 1mm;
-        color: var(--blue);
+        color: var(--key);
         font-size: 20px;
         font-weight: 700;
         line-height: 1.6;
@@ -676,7 +678,7 @@
 
       .document > h2 {
         margin-top: 14mm;
-        color: var(--blue);
+        color: var(--key);
         font-size: 34px;
         font-weight: 700;
         line-height: 1.4;
@@ -686,7 +688,7 @@
 
       .document > h3 {
         margin-top: 10mm;
-        color: var(--blue);
+        color: var(--key);
         font-size: 26px;
         font-weight: 700;
         line-height: 1.5;
@@ -701,8 +703,279 @@
       .document .do li,
       .document .dont li,
       .document .checklist li,
+      .document .table.rows,
       .document tr {
         break-inside: avoid;
+      }
+
+      /* 保護者に渡す書類。題と見出しを紺にし、地の色を使わず、1ページに多めに入れる */
+      .for-guardians {
+        --key: var(--navy);
+        padding: calc(14mm / 0.75) calc(16mm / 0.75) calc(18mm / 0.75);
+        page: report;
+      }
+
+      @media print {
+        .for-guardians {
+          padding: 0;
+        }
+      }
+
+      @page report {
+        size: 210mm 297mm;
+        margin: 14mm 16mm 18mm;
+
+        @bottom-left {
+          content: "PenBridge";
+          padding-left: 20px;
+          background: var(--mark) left center / 16px auto no-repeat;
+          color: var(--navy);
+          font-family: var(--serif);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+        }
+
+        @bottom-right {
+          content: var(--doc-title) "　" counter(page);
+          color: var(--muted);
+          font-family: var(--sans);
+          font-size: 11px;
+        }
+      }
+
+
+      .report-head {
+        position: relative;
+        padding-bottom: 5mm;
+        border-bottom: 1px solid var(--line-strong);
+      }
+
+      .report-head .brand {
+        margin-bottom: 7mm;
+      }
+
+      .report-head .date {
+        position: absolute;
+        top: 1mm;
+        right: 0;
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .report-head h1 {
+        font-size: 38px;
+      }
+
+      .report-head .period {
+        margin-left: 0.6em;
+        font-size: 24px;
+        font-weight: 400;
+      }
+
+      .for-guardians h2 {
+        margin-top: 6mm;
+        color: var(--key);
+        font-size: 23px;
+        font-weight: 700;
+        line-height: 1.5;
+        letter-spacing: 0.02em;
+        break-after: avoid;
+      }
+
+      .for-guardians .split {
+        gap: 8mm;
+      }
+
+      .for-guardians .split h2 {
+        margin-top: 3mm;
+      }
+
+      .for-guardians .split > div > * + * {
+        margin-top: 3mm;
+      }
+
+      .for-guardians .table.rows {
+        font-size: 18px;
+      }
+
+      .for-guardians .table.rows th,
+      .for-guardians .table.rows td {
+        padding-top: 2.1mm;
+        padding-bottom: 2.1mm;
+      }
+
+      .for-guardians .table.rows thead th {
+        padding-top: 0;
+        padding-bottom: 1.5mm;
+        font-size: 15px;
+      }
+
+      .for-guardians .list {
+        font-size: 18px;
+      }
+
+      .for-guardians .list li + li {
+        margin-top: 1.5mm;
+      }
+
+      /* 科目などの短い札。data-color で色を選ぶ。枠は付けない */
+      .tag {
+        display: inline-block;
+        min-width: 3.6em;
+        padding: 0 2mm;
+        background: #eceef2;
+        color: #3d4350;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.7;
+        text-align: center;
+      }
+
+      .tag[data-color="blue"] {
+        background: #e1ecfb;
+        color: #0b3d91;
+      }
+
+      .tag[data-color="green"] {
+        background: #e0f2e6;
+        color: #1b6b3a;
+      }
+
+      .tag[data-color="red"] {
+        background: #fde6e4;
+        color: #a32a22;
+      }
+
+      .tag[data-color="amber"] {
+        background: #fcefcf;
+        color: #7a5200;
+      }
+
+      /* 項目と値を横に並べる。生徒の情報や受験の情報に使う */
+      .facts {
+        display: grid;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        margin: 8mm 0 0;
+      }
+
+      .facts > div + div {
+        padding-left: 6mm;
+        border-left: 1px solid var(--line);
+      }
+
+      /* 枠も地もなく、左に寄せて並べる */
+      .facts.plain {
+        grid-auto-columns: max-content;
+        gap: 12mm;
+        margin-top: 4mm;
+      }
+
+      .facts.plain > div + div {
+        padding-left: 0;
+        border-left: 0;
+      }
+
+      .facts dt {
+        color: var(--muted);
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
+      .facts dd {
+        margin: 0.5mm 0 0;
+        color: var(--ink);
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      /* 地の色と縦線のない表 */
+      .table.rows {
+        font-size: 20px;
+      }
+
+      .table.rows th,
+      .table.rows td {
+        padding: 3.5mm 5mm 3.5mm 0;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .table.rows thead th {
+        padding-top: 0;
+        padding-bottom: 2mm;
+        border-bottom: 1px solid var(--line-strong);
+        background: none;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .table.rows tbody th {
+        background: none;
+        color: var(--key);
+      }
+
+      /* 表の中で、主な文の下に小さく添える文 */
+      .sub {
+        display: block;
+        margin-top: 1mm;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .quiet {
+        color: var(--muted);
+      }
+
+      /* 進み具合の目盛り。四角を3つ置き、data-score に1〜3を書く */
+      .rating {
+        display: inline-flex;
+        gap: 1mm;
+        margin-right: 2.5mm;
+        vertical-align: -0.4mm;
+      }
+
+      td:has(.rating) {
+        white-space: nowrap;
+      }
+
+      .rating i {
+        width: 3.6mm;
+        height: 3.6mm;
+        border: 1px solid var(--line-strong);
+      }
+
+      .rating[data-score="1"] i:nth-child(-n + 1),
+      .rating[data-score="2"] i:nth-child(-n + 2),
+      .rating[data-score="3"] i:nth-child(-n + 3),
+      .rating[data-score="4"] i:nth-child(-n + 4),
+      .rating[data-score="5"] i:nth-child(-n + 5) {
+        border-color: var(--blue);
+        background: var(--blue);
+      }
+
+      /* 箇条書き */
+      .list li {
+        position: relative;
+        padding-left: 6mm;
+        color: var(--ink);
+      }
+
+      .list li + li {
+        margin-top: 2.5mm;
+      }
+
+      .list li::before {
+        content: "";
+        position: absolute;
+        top: calc(0.8em - 0.9mm);
+        left: 1mm;
+        width: 1.8mm;
+        height: 1.8mm;
+        background: var(--key);
       }
     </style>
   </head>
