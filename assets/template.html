@@ -745,6 +745,44 @@
       }
 
 
+      @page report-wide {
+        size: 297mm 210mm;
+        margin: 12mm 16mm 16mm;
+
+        @bottom-left {
+          content: "PenBridge";
+          padding-left: 20px;
+          background: var(--mark) left center / 16px auto no-repeat;
+          color: var(--navy);
+          font-family: var(--serif);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+        }
+
+        @bottom-right {
+          content: var(--doc-title) "　" counter(page);
+          color: var(--muted);
+          font-family: var(--sans);
+          font-size: 11px;
+        }
+      }
+
+
+      /* 保護者に渡す書類の横向き。列の多い表に使う */
+      .for-guardians.wide {
+        width: calc(297mm / 0.75);
+        padding: calc(12mm / 0.75) calc(16mm / 0.75) calc(16mm / 0.75);
+        page: report-wide;
+      }
+
+      @media print {
+        .for-guardians.wide {
+          width: auto;
+          padding: 0;
+        }
+      }
+
       .report-head {
         position: relative;
         padding-bottom: 5mm;
@@ -924,6 +962,53 @@
         margin-top: 1mm;
         color: var(--muted);
         font-size: 16px;
+      }
+
+      /* 科目の見出し。科目の色の札を大きく置く */
+      .for-guardians h2 .tag {
+        min-width: 4.2em;
+        margin-right: 3mm;
+        padding: 0.3mm 4mm;
+        font-size: 22px;
+      }
+
+      .table.marks .mark[data-mark="double"] {
+        color: #0b3d91;
+      }
+
+      .table.marks .mark[data-mark="single"] {
+        color: #1b6b3a;
+      }
+
+      .table.marks .mark[data-mark="triangle"] {
+        color: #c2410c;
+      }
+
+      /* ◎○△を書く欄 */
+      .table.marks .mark {
+        color: var(--key);
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      .table.marks tbody th {
+        font-weight: 700;
+        white-space: normal;
+      }
+
+      .table.marks .tag {
+        min-width: 6.4em;
+      }
+
+      .table.marks .sub {
+        white-space: nowrap;
+      }
+
+      .table.marks thead .sub {
+        margin-top: 0;
+        font-size: 13px;
+        font-weight: 400;
       }
 
       .quiet {
