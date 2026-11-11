@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>資料の題</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@700&display=swap"
+    />
+    <style>
+      /* 資料ごとに変えるのはこの1行だけ。全ページの右下に出る */
+      :root {
+        --doc-title: "資料の題";
+      }
+
+      /* ここから下は変えない。決まりは references/design.md */
+      :root {
+        --navy: #001e43;
+        --blue: #014099;
+        --navy-mark: #002858;
+        --yellow: #ffc810;
+        --red: #d9121b;
+        --ink: #1a1a1c;
+        --body: #333333;
+        --muted: #626264;
+        --line: #d6d9e0;
+        --mist: #f4f5fa;
+        --sans: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+        --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+        --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='44 62 162 122'%3E%3Cpath fill='%23002858' d='M47 181 127 65.5 181 145C127 111 87 146 80 181Z'/%3E%3Cpath fill='%23FFC810' d='M110 148C112 144 160 114 203 181L169 181C160 155 138 141 110 148Z'/%3E%3C/svg%3E");
+        --mark-on-navy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='44 62 162 122'%3E%3Cpath fill='%23FFFFFF' d='M47 181 127 65.5 181 145C127 111 87 146 80 181Z'/%3E%3Cpath fill='%23FFC810' d='M110 148C112 144 160 114 203 181L169 181C160 155 138 141 110 148Z'/%3E%3C/svg%3E");
+      }
+
+      @page {
+        size: 297mm 210mm;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: #e6e8ee;
+        color: var(--body);
+        font-family: var(--sans);
+        font-size: 20px;
+        line-height: 1.6;
+        letter-spacing: 0.02em;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      body {
+        margin: 0;
+        counter-reset: slide;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      ul,
+      ol,
+      dl,
+      dd,
+      table {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul,
+      ol {
+        list-style: none;
+      }
+
+      p,
+      li,
+      td {
+        text-wrap: pretty;
+      }
+
+      /* ページ */
+      .slide {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 297mm;
+        height: 210mm;
+        margin: 8mm auto;
+        padding: 14mm 18mm 20mm;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 8px 32px rgb(0 30 67 / 14%);
+        counter-increment: slide;
+        break-after: page;
+        line-break: strict;
+      }
+
+      /* 見出しと短い文は、文節の切れ目で折り返す */
+      h1,
+      h2,
+      h3,
+      .lead,
+      .subtitle,
+      .say li {
+        word-break: auto-phrase;
+      }
+
+      .slide:last-child {
+        break-after: auto;
+      }
+
+      .slide::before {
+        content: "PenBridge";
+        position: absolute;
+        left: 18mm;
+        bottom: 8mm;
+        padding-left: 26px;
+        background: var(--mark) left center / 21px auto no-repeat;
+        color: var(--navy);
+        font-family: var(--serif);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0.04em;
+      }
+
+      .slide::after {
+        content: var(--doc-title) "　" counter(slide);
+        position: absolute;
+        right: 18mm;
+        bottom: 8mm;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      @media print {
+        html {
+          background: #fff;
+        }
+
+        .slide {
+          margin: 0;
+          box-shadow: none;
+        }
+      }
+
+      /* 文字がページからはみ出したとき、画面でだけ赤い枠を出す。PDFには出ない */
+      @media screen {
+        .slide.is-overflow {
+          outline: 4px solid #d9121b;
+        }
+      }
+
+      /* ページの頭 */
+      .section-name {
+        color: var(--muted);
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
+      .slide > h2 {
+        margin-top: 2mm;
+        color: var(--blue);
+        font-size: 36px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+      }
+
+      .lead {
+        margin-top: 3mm;
+        max-width: 42em;
+        color: var(--ink);
+        font-size: 22px;
+        line-height: 1.6;
+      }
+
+      .content {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 7mm;
+        min-height: 0;
+        margin-top: 9mm;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10mm;
+        align-items: start;
+      }
+
+      .split.wide-left {
+        grid-template-columns: 3fr 2fr;
+      }
+
+      /* 表紙 */
+      .cover {
+        justify-content: center;
+        padding: 20mm 28mm;
+      }
+
+      .cover::before,
+      .cover::after,
+      .chapter::before,
+      .chapter::after {
+        content: none;
+      }
+
+      .brand {
+        position: absolute;
+        top: 18mm;
+        left: 28mm;
+        padding-left: 46px;
+        background: var(--mark) left center / 38px auto no-repeat;
+        color: var(--navy);
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0.04em;
+      }
+
+      .cover h1,
+      .doc-head h1 {
+        color: var(--blue);
+        font-size: 48px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0;
+      }
+
+      .cover .subtitle,
+      .doc-head .subtitle {
+        margin-top: 5mm;
+        color: var(--ink);
+        font-size: 24px;
+        line-height: 1.5;
+      }
+
+      .cover .date {
+        position: absolute;
+        left: 28mm;
+        bottom: 18mm;
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .cover .bar,
+      .doc-head .bar {
+        width: 24mm;
+        height: 1.5mm;
+        margin-bottom: 8mm;
+        background: var(--yellow);
+      }
+
+      /* 章の扉 */
+      .chapter {
+        justify-content: center;
+        padding: 20mm 28mm;
+        background: var(--blue);
+        color: #fff;
+      }
+
+      .chapter .brand {
+        background-image: var(--mark-on-navy);
+        color: #fff;
+      }
+
+      .chapter .number {
+        color: var(--yellow);
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .chapter h2 {
+        margin-top: 2mm;
+        color: #fff;
+        font-size: 45px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0;
+      }
+
+      .chapter .lead {
+        color: #fff;
+      }
+
+      /* 目次 */
+      .toc li {
+        display: grid;
+        grid-template-columns: 5em 1fr;
+        gap: 6mm;
+        padding: 3mm 0;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        font-size: 24px;
+        line-height: 1.5;
+      }
+
+      .toc li:first-child {
+        border-top: 1px solid var(--line);
+      }
+
+      .toc .number {
+        color: var(--blue);
+        font-weight: 700;
+      }
+
+      /* 要点: 番号つきの行 */
+      .points {
+        counter-reset: point;
+      }
+
+      .points > li {
+        position: relative;
+        padding: 5mm 0 5mm 17mm;
+        border-bottom: 1px solid var(--line);
+        counter-increment: point;
+      }
+
+      .points > li:first-child {
+        border-top: 1px solid var(--line);
+      }
+
+      .points > li::before {
+        content: counter(point);
+        position: absolute;
+        top: 5mm;
+        left: 0;
+        display: grid;
+        place-items: center;
+        width: 11mm;
+        height: 11mm;
+        background: var(--blue);
+        color: #fff;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .points.plain > li {
+        padding-left: 0;
+      }
+
+      .points.plain > li::before {
+        content: none;
+      }
+
+      .points h3,
+      .cards h3 {
+        color: var(--blue);
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .points p,
+      .cards p {
+        margin-top: 1mm;
+      }
+
+      /* 並べて見せる: 2〜4枚 */
+      .cards {
+        display: grid;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        gap: 6mm;
+        counter-reset: card;
+      }
+
+      .cards > li {
+        padding: 5mm 5mm 7mm;
+        border: 1px solid var(--line);
+        background: #fff;
+        counter-increment: card;
+      }
+
+      .cards.numbered > li::before {
+        content: counter(card);
+        display: block;
+        margin-bottom: 1mm;
+        color: var(--blue);
+        font-size: 45px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0;
+      }
+
+      /* 手順: 横に流す */
+      .steps {
+        display: grid;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        gap: 7mm;
+        counter-reset: step;
+      }
+
+      .steps > li {
+        position: relative;
+        padding: 4mm 4mm 5mm;
+        border: 1px solid var(--line);
+        counter-increment: step;
+      }
+
+      .steps > li::before {
+        content: "STEP " counter(step);
+        display: block;
+        color: var(--muted);
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
+      .steps > li:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: -5.2mm;
+        border: 2.2mm solid transparent;
+        border-left: 3mm solid var(--blue);
+        translate: 0 -50%;
+      }
+
+      .steps h3 {
+        margin-top: 1mm;
+        color: var(--blue);
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .steps p {
+        margin-top: 1mm;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      /* 表 */
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 18px;
+      }
+
+      .table th,
+      .table td {
+        padding: 3mm 4mm;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .table thead th {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      .table tbody th {
+        background: var(--mist);
+        color: var(--blue);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      /* そのまま使える言い方 */
+      .say {
+        padding: 5mm 6mm 6mm;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .say h3,
+      .note h3 {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
+      .say h3 {
+        color: var(--muted);
+      }
+
+      .say li {
+        margin-top: 3mm;
+        color: var(--blue);
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      /* 注意 */
+      .note {
+        padding: 4mm 6mm 5mm;
+        border: 1px solid var(--red);
+        background: #fff;
+      }
+
+      .note h3 {
+        color: var(--red);
+      }
+
+      .note p {
+        margin-top: 1mm;
+        color: var(--ink);
+      }
+
+      /* すること・しないこと */
+      .do h3,
+      .dont h3 {
+        display: inline-block;
+        padding: 1mm 4mm;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .do h3 {
+        background: var(--blue);
+      }
+
+      .dont h3 {
+        background: var(--red);
+      }
+
+      .do ul,
+      .dont ul {
+        margin-top: 2mm;
+        border-top: 1px solid var(--line);
+      }
+
+      .do li,
+      .dont li {
+        position: relative;
+        padding: 3.5mm 0 3.5mm 9mm;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+      }
+
+      .do li::before {
+        content: "";
+        position: absolute;
+        top: 5.45mm;
+        left: 0.5mm;
+        width: 4.6mm;
+        height: 4.6mm;
+        border: 0.8mm solid var(--blue);
+        border-radius: 50%;
+      }
+
+      .dont li::before,
+      .dont li::after {
+        content: "";
+        position: absolute;
+        top: 7.35mm;
+        left: 0;
+        width: 5.6mm;
+        height: 0.8mm;
+        background: var(--red);
+        rotate: 45deg;
+      }
+
+      .dont li::after {
+        rotate: -45deg;
+      }
+
+      /* 印刷して使うチェックリスト */
+      .checklist li {
+        position: relative;
+        padding: 2.5mm 0 2.5mm 9mm;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        font-size: 18px;
+      }
+
+      .checklist li::before {
+        content: "";
+        position: absolute;
+        top: 4mm;
+        left: 0;
+        width: 4.6mm;
+        height: 4.6mm;
+        border: 0.5mm solid var(--ink);
+      }
+
+      .group-name {
+        margin-bottom: 1mm;
+        color: var(--blue);
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.6;
+      }
+
+      /* A4縦の文書。スライドと同じ部品を0.75倍の大きさで、上から続けて流し込む */
+      @page document {
+        size: 210mm 297mm;
+        margin: 18mm 20mm 22mm;
+
+        @bottom-left {
+          content: "PenBridge";
+          padding-left: 20px;
+          background: var(--mark) left center / 16px auto no-repeat;
+          color: var(--navy);
+          font-family: var(--serif);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+        }
+
+        @bottom-right {
+          content: var(--doc-title) "　" counter(page);
+          color: var(--muted);
+          font-family: var(--sans);
+          font-size: 11px;
+        }
+      }
+
+      .document {
+        width: calc(210mm / 0.75);
+        margin: 8mm auto;
+        padding: calc(18mm / 0.75) calc(20mm / 0.75) calc(22mm / 0.75);
+        background: #fff;
+        box-shadow: 0 8px 32px rgb(0 30 67 / 14%);
+        line-break: strict;
+        page: document;
+        zoom: 0.75;
+      }
+
+      @media print {
+        .document {
+          width: auto;
+          margin: 0;
+          padding: 0;
+          box-shadow: none;
+        }
+      }
+
+      .document > * + * {
+        margin-top: 6mm;
+      }
+
+      .document > h2 + *,
+      .document > h3 + * {
+        margin-top: 3mm;
+      }
+
+      .doc-head {
+        padding-bottom: 10mm;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .doc-head .brand {
+        position: static;
+        display: inline-block;
+        margin-bottom: 16mm;
+      }
+
+      .doc-head .date {
+        margin-top: 5mm;
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .document > h2 {
+        margin-top: 14mm;
+        color: var(--blue);
+        font-size: 34px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+        break-after: avoid;
+      }
+
+      .document > h3 {
+        margin-top: 10mm;
+        color: var(--blue);
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1.5;
+        break-after: avoid;
+      }
+
+      .document .points > li,
+      .document .cards,
+      .document .steps,
+      .document .say,
+      .document .note,
+      .document .do li,
+      .document .dont li,
+      .document .checklist li,
+      .document tr {
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 表紙 -->
+    <section class="slide cover">
+      <div class="brand">PenBridge</div>
+      <div class="bar"></div>
+      <h1>資料の題</h1>
+      <p class="subtitle">誰に向けた何の資料かを1行で</p>
+      <p class="date">2026年11月</p>
+    </section>
+
+    <!-- 目次 -->
+    <section class="slide">
+      <h2>目次</h2>
+      <div class="content">
+        <ol class="toc">
+          <li><span class="number">第1章</span>章の題</li>
+          <li><span class="number">第2章</span>章の題</li>
+          <li><span class="number">付録</span>チェックリスト</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 章の扉 -->
+    <section class="slide chapter">
+      <div class="brand">PenBridge</div>
+      <p class="number">第1章</p>
+      <h2>章の題</h2>
+    </section>
+
+    <!-- 要点: 1つの話を2〜4点に分けて説明する -->
+    <section class="slide">
+      <p class="section-name">第1章　章の題</p>
+      <h2>このページで言いたいことを1文で</h2>
+      <p class="lead">見出しを補う文を1〜2文。なくてもよい。</p>
+      <div class="content">
+        <ol class="points">
+          <li>
+            <h3>要点の見出し</h3>
+            <p>要点の説明を1〜2文で書く。</p>
+          </li>
+          <li>
+            <h3>要点の見出し</h3>
+            <p>要点の説明を1〜2文で書く。</p>
+          </li>
+          <li>
+            <h3>要点の見出し</h3>
+            <p>要点の説明を1〜2文で書く。</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 並べて見せる: 同じ重さのものを2〜4つ。番号が要らなければ numbered を外す -->
+    <section class="slide">
+      <p class="section-name">第1章　章の題</p>
+      <h2>3つのものを並べて見せる</h2>
+      <div class="content">
+        <ol class="cards numbered">
+          <li>
+            <h3>1つ目の題</h3>
+            <p>説明を1〜3文で書く。</p>
+          </li>
+          <li>
+            <h3>2つ目の題</h3>
+            <p>説明を1〜3文で書く。</p>
+          </li>
+          <li>
+            <h3>3つ目の題</h3>
+            <p>説明を1〜3文で書く。</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 手順: 順番に行うことを3〜5つ -->
+    <section class="slide">
+      <p class="section-name">第2章　章の題</p>
+      <h2>順番に行うことを見せる</h2>
+      <div class="content">
+        <ol class="steps">
+          <li>
+            <h3>確認する</h3>
+            <p>何をするかを1〜2文で。</p>
+          </li>
+          <li>
+            <h3>準備する</h3>
+            <p>何をするかを1〜2文で。</p>
+          </li>
+          <li>
+            <h3>行う</h3>
+            <p>何をするかを1〜2文で。</p>
+          </li>
+          <li>
+            <h3>報告する</h3>
+            <p>何をするかを1〜2文で。</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 表: 場面ごとの対応や、項目ごとの比較 -->
+    <section class="slide">
+      <p class="section-name">第3章　章の題</p>
+      <h2>場面ごとの対応を表で見せる</h2>
+      <div class="content">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>場面</th>
+              <th>まずすること</th>
+              <th>しないこと</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>場面の名前</th>
+              <td>すること</td>
+              <td>しないこと</td>
+            </tr>
+            <tr>
+              <th>場面の名前</th>
+              <td>すること</td>
+              <td>しないこと</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 左右に分ける: 左に要点、右にそのまま使える言い方と注意 -->
+    <section class="slide">
+      <p class="section-name">第1章　章の題</p>
+      <h2>要点と、そのまま使える言い方を並べる</h2>
+      <div class="content">
+        <div class="split wide-left">
+          <ol class="points">
+            <li>
+              <h3>要点の見出し</h3>
+              <p>要点の説明を1〜2文で書く。</p>
+            </li>
+            <li>
+              <h3>要点の見出し</h3>
+              <p>要点の説明を1〜2文で書く。</p>
+            </li>
+          </ol>
+          <div style="display: grid; gap: 6mm">
+            <div class="say">
+              <h3>声かけの例</h3>
+              <ul>
+                <li>「そのまま口に出せる文を書く」</li>
+                <li>「2つ目の例」</li>
+              </ul>
+            </div>
+            <div class="note">
+              <h3>注意</h3>
+              <p>してはいけないことを1〜2文で書く。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- すること・しないこと -->
+    <section class="slide">
+      <p class="section-name">第1章　章の題</p>
+      <h2>することと、しないことを分けて見せる</h2>
+      <div class="content">
+        <div class="split">
+          <div class="do">
+            <h3>すること</h3>
+            <ul>
+              <li>することを1文で書く。</li>
+              <li>することを1文で書く。</li>
+            </ul>
+          </div>
+          <div class="dont">
+            <h3>しないこと</h3>
+            <ul>
+              <li>しないことを1文で書く。</li>
+              <li>しないことを1文で書く。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- チェックリスト: 印刷して使う -->
+    <section class="slide">
+      <p class="section-name">付録</p>
+      <h2>チェックリスト</h2>
+      <div class="content">
+        <div class="split">
+          <div>
+            <p class="group-name">授業前</p>
+            <ul class="checklist">
+              <li>確かめることを1文で書く。</li>
+              <li>確かめることを1文で書く。</li>
+            </ul>
+          </div>
+          <div>
+            <p class="group-name">授業後</p>
+            <ul class="checklist">
+              <li>確かめることを1文で書く。</li>
+              <li>確かめることを1文で書く。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ここから下はA4縦の文書。スライドを作るときは article ごと消す。文書を作るときは上の section をすべて消す -->
+    <article class="document">
+      <header class="doc-head">
+        <div class="brand">PenBridge</div>
+        <div class="bar"></div>
+        <h1>資料の題</h1>
+        <p class="subtitle">誰に向けた何の資料かを1行で</p>
+        <p class="date">2026年11月</p>
+      </header>
+
+      <h2>1. 章の題</h2>
+      <p>章の最初に、この章で伝えることを1〜3文で書く。文書では、スライドより長い文を続けて書いてよい。</p>
+
+      <h3>節の題</h3>
+      <p>節の説明を書く。要点に分けられる話は、下の部品を使う。</p>
+      <ol class="points">
+        <li>
+          <h3>要点の見出し</h3>
+          <p>要点の説明を1〜3文で書く。</p>
+        </li>
+        <li>
+          <h3>要点の見出し</h3>
+          <p>要点の説明を1〜3文で書く。</p>
+        </li>
+      </ol>
+
+      <h3>節の題</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>場面</th>
+            <th>まずすること</th>
+            <th>しないこと</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>場面の名前</th>
+            <td>すること</td>
+            <td>しないこと</td>
+          </tr>
+          <tr>
+            <th>場面の名前</th>
+            <td>すること</td>
+            <td>しないこと</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="say">
+        <h3>伝え方の例</h3>
+        <ul>
+          <li>「そのまま口に出せる文を書く」</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>注意</h3>
+        <p>してはいけないことを1〜2文で書く。</p>
+      </div>
+
+      <h2>2. 章の題</h2>
+      <ol class="steps">
+        <li>
+          <h3>確認する</h3>
+          <p>何をするかを1〜2文で。</p>
+        </li>
+        <li>
+          <h3>準備する</h3>
+          <p>何をするかを1〜2文で。</p>
+        </li>
+        <li>
+          <h3>行う</h3>
+          <p>何をするかを1〜2文で。</p>
+        </li>
+      </ol>
+      <div class="split">
+        <div class="do">
+          <h3>すること</h3>
+          <ul>
+            <li>することを1文で書く。</li>
+            <li>することを1文で書く。</li>
+          </ul>
+        </div>
+        <div class="dont">
+          <h3>しないこと</h3>
+          <ul>
+            <li>しないことを1文で書く。</li>
+            <li>しないことを1文で書く。</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>チェックリスト</h3>
+      <ul class="checklist">
+        <li>確かめることを1文で書く。</li>
+        <li>確かめることを1文で書く。</li>
+      </ul>
+    </article>
+
+    <script>
+      // 文字が下の余白にはみ出したページに印を付ける。画面で赤い枠が出たら、文を削るかページを分ける
+      const markOverflow = () => {
+        for (const slide of document.querySelectorAll(".slide")) {
+          const limit = slide.getBoundingClientRect().bottom - parseFloat(getComputedStyle(slide).paddingBottom)
+          const overflows = [...slide.querySelectorAll("*")].some(
+            (element) =>
+              getComputedStyle(element).position !== "absolute" && element.getBoundingClientRect().bottom > limit + 1,
+          )
+          slide.classList.toggle("is-overflow", overflows)
+        }
+      }
+      document.fonts.ready.then(markOverflow)
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="penbridge-logo-mark-color-title">
+  <title id="penbridge-logo-mark-color-title">PenBridge logo mark</title>
+  <path
+    fill="#002858"
+    d="M 47 181 L 127 65.5 L 181 145 C 127 111 87 146 80 181 Z"
+  />
+  <path
+    fill="#FFC810"
+    d="M 110 148 C 112 144 160 114 203 181 L 169 181 C 160 155 138 141 110 148 Z"
+  />
+</svg>
