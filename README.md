@@ -4,19 +4,17 @@ PenBridgeの資料を、AIと一緒に同じ見た目で作るためのスキル
 
 Agent Skillsの形式で書いてあるので、この形式に対応したAIならどれでも使えます。
 
-## 入れ方
+## 使い方
 
-ClaudeやChatGPTのアプリでは、このページの「Code」から「Download ZIP」でZIPを落とし、設定のSkillsからアップロードします。
-
-スキルに対応していないAIでは、ZIPを会話に添付して「このフォルダの `SKILL.md` に従って資料を作って」と頼みます。
-
-## 頼み方
-
-原稿を貼るか添付して、次のように頼みます。
+Webを読めるAIには、このページのURLを渡して頼みます。
 
 ```
-この原稿をPenBridgeのスライドにして。読むのは新しく入った講師です。
+https://github.com/Monello-LLC/penbridge-materials のスキルに従って、この原稿をPenBridgeのスライドにして。読むのは新しく入った講師です。
 ```
+
+毎回URLを渡したくないときは、このページの「Code」から「Download ZIP」でZIPを落とし、ClaudeやChatGPTの設定のSkillsからアップロードします。
+
+原稿は貼るか添付します。A4縦の文書にしたいときは「スライド」を「A4の文書」に変えます。
 
 AIが先に構成を見せるので、確かめてから作ってもらいます。できたHTMLをChromeで開き、印刷から「PDFに保存」を選ぶとPDFになります。
 
