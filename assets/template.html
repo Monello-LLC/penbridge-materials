@@ -708,6 +708,26 @@
         break-inside: avoid;
       }
 
+      /* 画像。画面の写真や図を置く。下に短い説明を添えられる */
+      .figure {
+        margin: 0;
+        break-inside: avoid;
+      }
+
+      .figure img {
+        display: block;
+        max-width: 100%;
+        max-height: 110mm;
+        border: 1px solid var(--line);
+      }
+
+      .figure figcaption {
+        margin-top: 2mm;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
       /* 保護者に渡す書類。題と見出しを紺にし、地の色を使わず、1ページに多めに入れる */
       .for-guardians {
         --key: var(--navy);
@@ -1391,6 +1411,30 @@
               <p>してはいけないことを1〜2文で書く。</p>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 画像と説明: 左に画面の写真、右に操作の手順。src には、HTMLと同じフォルダに置いた画像のファイル名を書く -->
+    <section class="slide">
+      <p class="section-name">第5章　章の題</p>
+      <h2>画面の写真と、操作の説明を並べる</h2>
+      <div class="content">
+        <div class="split">
+          <figure class="figure">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 300'%3E%3Crect width='480' height='300' fill='%23f4f5fa'/%3E%3Ctext x='240' y='158' font-size='22' fill='%23626264' text-anchor='middle'%3E画面の写真%3C/text%3E%3C/svg%3E" alt="画面の写真" />
+            <figcaption>何の画面かを1文で書く。</figcaption>
+          </figure>
+          <ol class="points">
+            <li>
+              <h3>最初にすること</h3>
+              <p>どこを押すかを1文で書く。</p>
+            </li>
+            <li>
+              <h3>次にすること</h3>
+              <p>何を入れるかを1文で書く。</p>
+            </li>
+          </ol>
         </div>
       </div>
     </section>
