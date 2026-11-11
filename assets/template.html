@@ -821,6 +821,12 @@
         break-after: avoid;
       }
 
+      .for-guardians h2:not(:has(.tag)) {
+        padding-left: 3mm;
+        border-left: 1.6mm solid var(--yellow);
+        line-height: 1.25;
+      }
+
       .for-guardians .split {
         gap: 8mm;
       }
@@ -841,9 +847,11 @@
       .for-guardians .table.rows td {
         padding-top: 2.1mm;
         padding-bottom: 2.1mm;
+        border-bottom-color: #e9ebf0;
       }
 
       .for-guardians .table.rows thead th {
+        border-bottom-color: var(--line-strong);
         padding-top: 0;
         padding-bottom: 1.5mm;
         font-size: 15px;
@@ -982,6 +990,52 @@
 
       .table.marks .mark[data-mark="triangle"] {
         color: #c2410c;
+      }
+
+      /* 項目名と中身を2列で並べる表。見出しの行は置かない */
+      .table.kv tbody th {
+        width: 24%;
+        white-space: normal;
+      }
+
+      .split .table.kv tbody th {
+        width: 32%;
+        white-space: nowrap;
+      }
+
+      .table.kv tr:first-child th,
+      .table.kv tr:first-child td {
+        border-top: 1px solid var(--line-strong);
+      }
+
+      /* 割合を横の帯で見せる。flex に割合の数字を入れる */
+      .share {
+        display: flex;
+        gap: 0.6mm;
+      }
+
+      .share .tag {
+        min-width: 0;
+        padding: 1mm 3mm;
+        font-size: 18px;
+        text-align: left;
+      }
+
+      /* 最後に置くメッセージ。長い文なので薄い枠で囲む。見出しは枠の外に置く */
+      .message {
+        margin-right: 0.5mm;
+        padding: 4.5mm 6mm 5mm;
+        border: 1px solid #c3c8d3;
+        break-inside: avoid;
+      }
+
+      .message p + p {
+        margin-top: 3mm;
+      }
+
+      .table.kv .tag {
+        min-width: 0;
+        margin-right: 1mm;
       }
 
       /* ◎○△を書く欄 */
