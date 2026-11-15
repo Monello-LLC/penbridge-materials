@@ -12,6 +12,7 @@ PenBridgeの資料や保護者向け書類を、AIでデザインを統一して
 - **スライド（A4横）**: 研修で映す資料、場面ごとに参照するマニュアル
 - **文書（A4縦）**: 印刷して配る資料、上から順に読む手順書・説明資料
 - **保護者向け定型書類**: 月次レポート、単元別評価表、学習ロードマップ、標準進行表
+- **Instagram投稿**: 記事を5枚前後の画像で紹介する投稿（1080×1350pxのPNG）
 
 ## 使い方
 
@@ -39,4 +40,6 @@ https://github.com/Monello-LLC/penbridge-materials のスキルに従って、�
 - `references/design.md`: 色、書体、余白、ロゴのルール
 - `assets/template.html`: スライドと文書のひな形（ブラウザで開くと部品の見本が見られます）
 - `assets/monthly-report.html` ほか: 保護者向け書類のひな形4種（月次レポート、単元別評価表、学習ロードマップ、標準進行表 ※見本の生徒は架空です）
+- `assets/instagram/post.html`: Instagram投稿のひな形。`render.mjs` でPNGに書き出します（Node.jsとplaywrightが必要）
+- `references/instagram.md`: Instagram投稿の決まり
 - `assets/logo/`: ロゴマーク
