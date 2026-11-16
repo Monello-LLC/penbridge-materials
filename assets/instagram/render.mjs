@@ -3,12 +3,13 @@
  *
  * 使い方: node render.mjs <post.html>
  * 出力先: post.html と同じフォルダの output/slide-01.png, slide-02.png, …
- * 前提: Node.js と playwright（npm i playwright）。書体を読むのでネットにつながっていること。
+ * 前提: Node.js と playwright（npm i playwright）。書体は同梱の fonts/ を使うので、ネットにつながっていなくてもよい。
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
+import { blockWebFonts, useBundledFonts } from './fonts.mjs'
 
 const htmlPath = path.resolve(process.argv[2] ?? '')
 if (!process.argv[2] || !fs.existsSync(htmlPath)) {
@@ -22,8 +23,9 @@ fs.mkdirSync(outDir, { recursive: true })
 // Playwright のブラウザが入っていなければ、手元の Chrome を使う
 const browser = await chromium.launch().catch(() => chromium.launch({ channel: 'chrome' }))
 const page = await browser.newPage({ viewport: { width: 1200, height: 1500 }, deviceScaleFactor: 1 })
-await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'networkidle' })
-await page.evaluate(() => document.fonts.ready)
+await blockWebFonts(page)
+await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'load' })
+await useBundledFonts(page)
 await page.waitForTimeout(300)
 
 const slides = await page.locator('.slide').all()

@@ -12,7 +12,7 @@ PenBridgeの資料や保護者向け書類を、AIでデザインを統一して
 - **スライド（A4横）**: 研修で映す資料、場面ごとに参照するマニュアル
 - **文書（A4縦）**: 印刷して配る資料、上から順に読む手順書・説明資料
 - **保護者向け定型書類**: 月次レポート、単元別評価表、学習ロードマップ、標準進行表
-- **Instagram投稿**: 記事を5枚前後の画像で紹介する投稿（1080×1350pxのPNG）
+- **Instagram投稿**: 記事を5枚前後の画像で紹介する投稿（1080×1350pxのPNG）と、同じ内容に動きを付けたリール動画（1080×1920pxのMP4）
 
 ## 使い方
 
@@ -29,6 +29,12 @@ PenBridgeの資料や保護者向け書類を、AIでデザインを統一して
 https://github.com/Monello-LLC/penbridge-materials のスキルに従って、この原稿をPenBridgeのスライドにして。読むのは新しく入った講師です。
 ```
 
+Instagram投稿やリールは、記事のURLを渡すだけで作れます。本文と表紙の絵は、AIが記事のページから取ります。ChatGPTのようにページから画像を落とせないAIには、記事のカバー画像も添付します。
+
+```text
+https://github.com/Monello-LLC/penbridge-materials のスキルに従って、この記事のInstagram投稿とリールを作って。 https://penbridge.jp/contents/keio-junior-high-setsumeikai
+```
+
 ### 3. 構成を確認してPDFにする
 
 1. AIが先に構成案を見せるので、確認してからHTMLを作ってもらいます。
@@ -40,6 +46,7 @@ https://github.com/Monello-LLC/penbridge-materials のスキルに従って、�
 - `references/design.md`: 色、書体、余白、ロゴのルール
 - `assets/template.html`: スライドと文書のひな形（ブラウザで開くと部品の見本が見られます）
 - `assets/monthly-report.html` ほか: 保護者向け書類のひな形4種（月次レポート、単元別評価表、学習ロードマップ、標準進行表 ※見本の生徒は架空です）
-- `assets/instagram/post.html`: Instagram投稿のひな形。`render.mjs` でPNGに書き出します（Node.jsとplaywrightが必要）
+- `assets/instagram/post.html`: Instagram投稿のひな形。`render.mjs` でPNGに、`reel.mjs` でリール動画に書き出します（Node.jsとplaywrightが必要。動画はffmpegも必要）
+- `assets/instagram/fonts/`: 書き出しに使う書体（しっぽり明朝B1、しっぽり明朝、LINE Seed JP。SIL Open Font License）
 - `references/instagram.md`: Instagram投稿の決まり
 - `assets/logo/`: ロゴマーク
