@@ -985,8 +985,8 @@
         color: var(--key);
       }
 
-      /* 月ごとの取り組みの表。月の見出しに青の地を敷く */
-      .table.plan th + th,
+      /* 月ごとの取り組みの表。月の見出しに青の地を、項目の列に薄い地を敷く */
+      .table.plan th,
       .table.plan td {
         padding-right: 3mm;
         padding-left: 3mm;
@@ -998,6 +998,10 @@
         border-left: 1px solid #fff;
         background: var(--blue);
         color: #fff;
+      }
+
+      .table.plan tbody th {
+        background: var(--mist);
       }
 
       /* 表の中で、主な文の下に小さく添える文 */
