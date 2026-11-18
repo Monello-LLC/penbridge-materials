@@ -102,13 +102,16 @@
         line-break: strict;
       }
 
-      /* 見出しと短い文は、文節の切れ目で折り返す */
+      /* 見出し、短い文、表、メッセージは、文節の切れ目で折り返す */
       h1,
       h2,
       h3,
       .lead,
       .subtitle,
-      .say li {
+      .say li,
+      th,
+      td,
+      .message p {
         word-break: auto-phrase;
       }
 
