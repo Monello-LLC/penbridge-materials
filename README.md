@@ -40,13 +40,23 @@ https://github.com/Monello-LLC/penbridge-materials のスキルに従って、�
 1. AIが先に構成案を見せるので、確認してからHTMLを作ってもらいます。
 2. できたHTMLをChromeで開き、**印刷 >「PDFに保存」** を選ぶとPDFになります。
 
+### Instagram投稿とリールを書き出す
+
+1. AIから `post.html` と表紙の絵を受け取ります。
+2. パソコンのChromeで [書き出しページ](https://monello-llc.github.io/penbridge-materials/) を開き、2つのファイルをドロップします。フォルダやZIPのままでも構いません。
+3. **画像を保存** でPNGを、**動画を保存** でリールのMP4を保存します。
+
+書き出しページは、ひな形のCSSと決まった動きで組み直すので、どのAIで作っても同じ見た目になります。赤い枠の付いた面は文が収まっていないので、AIに文を短くしてもらってからドロップし直します。
+
 ## ファイル構成
 
 - `SKILL.md`: AIが読む作成手順と文章ルール
 - `references/design.md`: 色、書体、余白、ロゴのルール
 - `assets/template.html`: スライドと文書のひな形（ブラウザで開くと部品の見本が見られます）
 - `assets/monthly-report.html` ほか: 保護者向け書類のひな形4種（月次レポート、単元別評価表、学習ロードマップ、標準進行表 ※見本の生徒は架空です）
-- `assets/instagram/post.html`: Instagram投稿のひな形。`render.mjs` でPNGに、`reel.mjs` でリール動画に書き出します（Node.jsとplaywrightが必要。動画はffmpegも必要）
+- `index.html`: Instagram投稿の書き出しページ（GitHub Pagesで公開）
+- `assets/instagram/post.html`: Instagram投稿のひな形
+- `assets/instagram/export.mjs`: 書き出しページを手元で動かしてPNGとリール動画に書き出すスクリプト（Node.js、playwright、Google Chromeが必要）
 - `assets/instagram/fonts/`: 書き出しに使う書体（しっぽり明朝B1、しっぽり明朝、LINE Seed JP。SIL Open Font License）
 - `references/instagram.md`: Instagram投稿の決まり
 - `assets/logo/`: ロゴマーク

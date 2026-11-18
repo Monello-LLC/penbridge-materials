@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Instagram書き出し | PenBridge</title>
+    <style>
+      /*
+       * Instagram投稿の書き出しページ。AIが作った post.html と表紙の絵を受け取り、PNGとリール動画にする。
+       * 見た目は assets/instagram/post.html のCSSで組み直すので、AIのファイルにある見た目の指定は使わない。
+       * ファイルはブラウザの中だけで扱い、どこにも送らない。
+       */
+      :root { --navy: #00274f; --cream: #f7f5f1; --red: #d9121b; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { min-height: 100vh; padding: 40px 24px 64px; background: var(--cream); color: var(--navy); font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; }
+      main { max-width: 1120px; margin: 0 auto; }
+      h1 { font-family: "Hiragino Mincho ProN", serif; font-size: 24px; font-weight: 600; letter-spacing: 0.06em; }
+      .drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; margin-top: 24px; padding: 48px 24px; border: 1.5px dashed var(--navy); background: #fff; text-align: center; cursor: pointer; }
+      .drop.is-over { background: #eef2f7; }
+      .drop input { display: none; }
+      .drop p { word-break: keep-all; overflow-wrap: anywhere; }
+      .drop span { padding: 10px 20px; border: 1.5px solid var(--navy); font-size: 15px; }
+      #msg { min-height: 1.6em; margin-top: 20px; font-size: 15px; line-height: 1.6; }
+      #msg.is-error { color: var(--red); }
+      .result { display: flex; flex-wrap: wrap; gap: 32px; margin-top: 24px; }
+      .result[hidden] { display: none; }
+      .reel { width: 270px; height: 480px; overflow: hidden; background: var(--navy); }
+      .reel iframe { width: 1080px; height: 1920px; border: 0; transform: scale(0.25); transform-origin: 0 0; }
+      .side { display: flex; flex: 1; flex-direction: column; gap: 24px; min-width: 280px; }
+      .slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      .slides img { display: block; width: 100%; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+      button { padding: 14px 28px; border: 0; background: var(--navy); color: #fff; font: inherit; font-size: 16px; letter-spacing: 0.06em; cursor: pointer; }
+      button:disabled { background: #9aa6b2; cursor: default; }
+      .work { position: absolute; left: -10000px; top: 0; width: 1080px; height: 1920px; border: 0; }
+    </style>
+  </head>
+  <body data-state="loading">
+    <main>
+      <h1>Instagram書き出し</h1>
+      <label class="drop" id="drop">
+        <p>post.html と表紙の絵をここにドロップ</p>
+        <span>ファイルを選ぶ</span>
+        <input id="files" type="file" multiple accept=".html,.htm,.zip,image/*" />
+      </label>
+      <p id="msg">準備しています</p>
+      <section class="result" id="result" hidden>
+        <div class="reel"><iframe id="reel" title="リール" sandbox="allow-same-origin"></iframe></div>
+        <div class="side">
+          <div class="slides" id="slides"></div>
+          <div class="actions">
+            <button id="save-images" type="button">画像を保存</button>
+            <button id="save-reel" type="button">動画を保存</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <iframe class="work" id="work" title="組版" aria-hidden="true" tabindex="-1" sandbox="allow-same-origin"></iframe>
+
+    <script type="module">
+      const MEDIABUNNY = "https://cdn.jsdelivr.net/npm/mediabunny@1.65.2/dist/bundles/mediabunny.min.mjs"
+      const FFLATE = "https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js"
+      const HARFBUZZ = "https://cdn.jsdelivr.net/npm/harfbuzzjs@1.6.4/dist/harfbuzz-subset.wasm"
+      const WOFF2 = "https://cdn.jsdelivr.net/npm/wawoff2@2.0.1/build/decompress_binding.js"
+
+      const FPS = 30
+      const W = 1080
+      const H = 1350
+      const REEL_H = 1920
+      const IMAGE = /\.(png|jpe?g|webp|avif|gif)$/i
+      // 書体は同梱の fonts/ を使う。Google Fonts の配信では "palt"（字詰め）が効かないため
+      const FACES = [
+        ["Shippori Mincho B1", 500, "ShipporiMinchoB1-Medium"],
+        ["Shippori Mincho B1", 600, "ShipporiMinchoB1-SemiBold"],
+        ["Shippori Mincho", 500, "ShipporiMincho-Medium"],
+        ["Shippori Mincho", 600, "ShipporiMincho-SemiBold"],
+        ["LINE Seed JP", 400, "LINESeedJP-Regular"],
+        ["LINE Seed JP", 700, "LINESeedJP-Bold"],
+      ]
+      // リールは 1080×1920。1080×1350 の面を上から240pxに置く。下はInstagramの文やボタンが重なるので広く空ける
+      const REEL_CSS = `
+        .stage { position: relative; width: ${W}px; height: ${REEL_H}px; overflow: hidden; background: #00274f; }
+        .stage .slide { position: absolute !important; left: 0; top: 240px; margin: 0 !important; }
+        .stage .slide .frame { display: none; }
+        .stage mark { background-repeat: no-repeat; }
+        .gframe { position: absolute; left: 0; top: 240px; width: ${W}px; height: ${H}px; stroke: #c3a15c; z-index: 100; }
+      `
+      const ONE_CSS = `.one { width: ${W}px; height: ${H}px; } .one .slide { margin: 0; }`
+      const GFRAME = `<svg class="gframe" viewBox="0 0 ${W} ${H}" fill="none"><rect x="44" y="44" width="992" height="1262" stroke-width="1.5" pathLength="1" stroke-dasharray="1" /></svg>`
+
+      // AIのファイルから残す要素と属性。ひな形で使うものだけにする
+      const KEEP = new Set(["section", "div", "p", "h1", "h2", "h3", "ul", "ol", "li", "b", "i", "em", "strong", "small", "span", "mark", "br"])
+      const KEEP_SVG = new Set(["svg", "g", "circle", "path", "rect", "line"])
+      const DROP = new Set(["script", "style", "template", "iframe", "object", "embed", "img", "picture", "video", "audio", "source", "track", "canvas", "noscript", "link", "meta", "base", "title", "form", "input", "button", "select", "textarea", "math"])
+      const ATTRS = new Set(["class", "role", "aria-label", "aria-hidden", "data-seconds"])
+      const SVG_ATTRS = new Set(["viewbox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "cx", "cy", "r", "d", "x", "y", "x1", "y1", "x2", "y2", "width", "height", "rx", "ry"])
+      // XMLに入れられない文字。SVGを通して絵にするので取り除く
+      const BAD_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F￾￿]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g
+
+      const $ = (id) => document.getElementById(id)
+      const state = (s) => {
+        document.body.dataset.state = s
+      }
+      const say = (text, error = false) => {
+        $("msg").textContent = text
+        $("msg").classList.toggle("is-error", error)
+      }
+
+      // ---- 正本のひな形と書体 ----
+      let CSS = ""
+      let FRAME = ""
+      const ready = (async () => {
+        const template = new DOMParser().parseFromString(await (await fetch("assets/instagram/post.html")).text(), "text/html")
+        CSS = template.querySelector("style").textContent.replace(/@import url\([^)]*\)\s*;/g, "").replace(":root", ":root, .stage, .one")
+        FRAME = template.querySelector(".slide .frame").outerHTML
+        const [fonts, hb] = await Promise.all([loadFonts(), loadHarfbuzz()])
+        return { fonts, hb }
+      })()
+
+      async function loadHarfbuzz() {
+        const { instance } = await WebAssembly.instantiate(await (await fetch(HARFBUZZ)).arrayBuffer())
+        instance.exports._initialize()
+        return instance.exports
+      }
+
+      async function loadFonts() {
+        const woff2 = await new Promise((resolve, reject) => {
+          window.Module = { onRuntimeInitialized: () => resolve(window.Module) }
+          const script = document.createElement("script")
+          script.src = WOFF2
+          script.onerror = reject
+          document.head.append(script)
+        })
+        return Promise.all(
+          FACES.map(async ([, , file]) => {
+            const data = new Uint8Array(await (await fetch(`assets/instagram/fonts/${file}.woff2`)).arrayBuffer())
+            const ttf = woff2.decompress(data)
+            if (!ttf) throw new Error(`${file} を読めない`)
+            return ttf.slice()
+          }),
+        )
+      }
+
+      // 使う字だけを残した書体を作る。字詰めなどの機能はすべて残す
+      function subset(hb, ttf, text) {
+        const heap = () => new Uint8Array(hb.memory.buffer)
+        const input = hb.hb_subset_input_create_or_fail()
+        const ptr = hb.malloc(ttf.byteLength)
+        heap().set(ttf, ptr)
+        const blob = hb.hb_blob_create(ptr, ttf.byteLength, 2, 0, 0)
+        const face = hb.hb_face_create(blob, 0)
+        hb.hb_blob_destroy(blob)
+        const features = hb.hb_subset_input_set(input, 6)
+        hb.hb_set_clear(features)
+        hb.hb_set_invert(features)
+        const unicodes = hb.hb_subset_input_unicode_set(input)
+        for (const c of text) hb.hb_set_add(unicodes, c.codePointAt(0))
+        const result = hb.hb_subset_or_fail(face, input)
+        hb.hb_subset_input_destroy(input)
+        if (!result) {
+          hb.hb_face_destroy(face)
+          hb.free(ptr)
+          throw new Error("書体を作れませんでした。")
+        }
+        const out = hb.hb_face_reference_blob(result)
+        const at = hb.hb_blob_get_data(out, 0)
+        const bytes = heap().slice(at, at + hb.hb_blob_get_length(out))
+        hb.hb_blob_destroy(out)
+        hb.hb_face_destroy(result)
+        hb.hb_face_destroy(face)
+        hb.free(ptr)
+        return bytes
+      }
+
+      const dataUrl = (blob) =>
+        new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.readAsDataURL(blob)
+        })
+
+      async function fontCss(text) {
+        const { fonts, hb } = await ready
+        const chars = [...new Set(text + " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")].join("")
+        const faces = []
+        for (const [i, [family, weight]] of FACES.entries()) {
+          const url = await dataUrl(new Blob([subset(hb, fonts[i], chars)], { type: "font/ttf" }))
+          faces.push(`@font-face { font-family: "${family}"; font-weight: ${weight}; font-style: normal; font-display: block; src: url("${url}") format("truetype"); }`)
+        }
+        return faces.join("\n")
+      }
+
+      // ---- 受け取ったファイル。フォルダとZIPは中を開く ----
+      // FinderのZIPは日本語の名前に印を付けないので、fflateが1バイトずつ読んだ名前をUTF-8かShift_JISで読み直す
+      function zipName(name) {
+        if ([...name].some((c) => c.charCodeAt(0) > 255)) return name
+        const bytes = Uint8Array.from(name, (c) => c.charCodeAt(0))
+        try {
+          return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+        } catch {
+          return new TextDecoder("shift_jis").decode(bytes)
+        }
+      }
+
+      async function collect(items) {
+        const files = []
+        const walk = async (entry) => {
+          if (entry.isFile) files.push(await new Promise((resolve, reject) => entry.file(resolve, reject)))
+          else if (entry.isDirectory) {
+            const reader = entry.createReader()
+            for (;;) {
+              const batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject))
+              if (!batch.length) break
+              for (const child of batch) await walk(child)
+            }
+          }
+        }
+        for (const item of items) {
+          if (item instanceof File) files.push(item)
+          else await walk(item)
+        }
+        const out = []
+        for (const file of files) {
+          if (/\.zip$/i.test(file.name)) {
+            const { unzipSync } = await import(FFLATE)
+            for (const [name, bytes] of Object.entries(unzipSync(new Uint8Array(await file.arrayBuffer())))) {
+              if (name.startsWith("__MACOSX/") || name.endsWith("/")) continue
+              out.push(new File([bytes], zipName(name).split("/").pop()))
+            }
+          } else out.push(file)
+        }
+        return out.filter((file) => !file.name.startsWith("."))
+      }
+
+      async function fitImage(file, width, height) {
+        const bitmap = await createImageBitmap(file).catch(() => {
+          throw new Error(`表紙の絵（${file.name}）を開けませんでした。`)
+        })
+        const scale = Math.min(1, Math.max(width / bitmap.width, height / bitmap.height) * 1.5)
+        const canvas = new OffscreenCanvas(Math.round(bitmap.width * scale), Math.round(bitmap.height * scale))
+        const ctx = canvas.getContext("2d")
+        ctx.imageSmoothingQuality = "high"
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+        return dataUrl(await canvas.convertToBlob({ type: "image/webp", quality: 0.95 }))
+      }
+
+      function imageName(style) {
+        const src = style?.match(/url\(["']?(.*?)["']?\)/)?.[1] ?? ""
+        const name = src.split(/[\\/]/).pop().split(/[?#]/)[0]
+        try {
+          return decodeURIComponent(name)
+        } catch {
+          return name
+        }
+      }
+
+      // AIのファイルから、ひな形にある要素と文、表紙の絵の名前と位置だけを残す
+      function clean(doc) {
+        const body = doc.body
+        const styles = new Map([...body.querySelectorAll(".cover__painting")].map((el) => [el, { image: el.style.backgroundImage, position: el.style.backgroundPosition }]))
+        // 金の枠はひな形のものに差し替えるので、属性を消して見分けられなくなる前に取り除く
+        body.querySelectorAll(".frame").forEach((el) => el.remove())
+
+        const walker = doc.createTreeWalker(body, NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_PROCESSING_INSTRUCTION)
+        const junk = []
+        while (walker.nextNode()) junk.push(walker.currentNode)
+        junk.forEach((node) => node.remove())
+
+        for (const el of [...body.querySelectorAll("*")]) {
+          const name = el.localName.toLowerCase()
+          const svg = el.namespaceURI === "http://www.w3.org/2000/svg"
+          if (DROP.has(name) || (svg && !KEEP_SVG.has(name))) {
+            el.remove()
+            continue
+          }
+          if (!svg && !KEEP.has(name)) {
+            el.replaceWith(...el.childNodes)
+            continue
+          }
+          const allowed = svg ? SVG_ATTRS : ATTRS
+          for (const { name: attr } of [...el.attributes]) {
+            if (allowed.has(attr.toLowerCase())) el.setAttribute(attr, el.getAttribute(attr).replace(BAD_CHARS, ""))
+            else el.removeAttribute(attr)
+          }
+        }
+        const text = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT)
+        while (text.nextNode()) text.currentNode.data = text.currentNode.data.replace(BAD_CHARS, "")
+
+        const slides = [...body.querySelectorAll("section.slide")]
+        for (const slide of slides) {
+          slide.classList.remove("is-overflow")
+          slide.insertAdjacentHTML("afterbegin", FRAME)
+        }
+        const paintings = [...body.querySelectorAll(".cover__painting")].map((el) => ({
+          name: imageName(styles.get(el)?.image),
+          position: styles.get(el)?.position || "50% 50%",
+        }))
+        return { slides, paintings }
+      }
+
+      async function mount(iframe, body, css) {
+        await new Promise((resolve) => {
+          iframe.onload = resolve
+          iframe.srcdoc = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>${css}</style></head><body>${body}</body></html>`
+        })
+        const doc = iframe.contentDocument
+        await Promise.all(FACES.map(([family, weight]) => doc.fonts.load(`${weight} 40px "${family}"`, "あ漢A1")))
+        await doc.fonts.ready
+        return doc
+      }
+
+      // はみ出しを調べる。白い面からはみ出した文、白い面の中で余白に食い込んだ題、
+      // 表紙と最後の面で枠に近すぎる文、3行以上の題
+      function check(doc) {
+        const bad = []
+        doc.querySelectorAll(".slide").forEach((slide, i) => {
+          const box = slide.getBoundingClientRect()
+          const panel = slide.querySelector(".panel")
+          let over = false
+          if (panel) {
+            if (panel.scrollHeight > panel.clientHeight + 1 || panel.scrollWidth > panel.clientWidth + 1) over = true
+            for (const el of panel.querySelectorAll("h2, .big")) if (el.scrollWidth > el.clientWidth + 1) over = true
+          } else {
+            for (const el of slide.querySelectorAll(":scope > :not(.frame)")) {
+              const r = el.getBoundingClientRect()
+              if (r.left - box.left < 76 || box.right - r.right < 76 || box.bottom - r.bottom < 76) over = true
+            }
+            for (const h1 of slide.querySelectorAll("h1")) {
+              if (Math.round(h1.getBoundingClientRect().height / parseFloat(getComputedStyle(h1).lineHeight)) > 2) over = true
+            }
+          }
+          slide.classList.toggle("is-overflow", over)
+          if (over) bad.push(i + 1)
+        })
+        return bad
+      }
+
+      // ---- SVGを通して1枚の絵にする ----
+      const xml = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      const svgHead = (w, h, css) =>
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject x="0" y="0" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml"><style>${xml(css)}`
+      const SVG_TAIL = "</div></foreignObject></svg>"
+
+      async function draw(ctx, url) {
+        const img = new Image()
+        img.src = url
+        await img.decode().catch(() => {
+          throw new Error("面を絵にできませんでした。post.html をAIに作り直してもらってください。")
+        })
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+        ctx.drawImage(img, 0, 0)
+      }
+
+      async function slidePng(slide, css) {
+        const markup = `<div class="one">${new XMLSerializer().serializeToString(slide)}</div>`
+        const canvas = new OffscreenCanvas(W, H)
+        await draw(canvas.getContext("2d"), "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgHead(W, H, css) + "</style>" + markup + SVG_TAIL))
+        return canvas.convertToBlob({ type: "image/png" })
+      }
+
+      // ---- 動き。金の枠を描き、表紙の絵がアーチの下から現れる。中面は白い面が上から開き、行が1つずつ出る ----
+      function animate(doc) {
+        const EASE = "cubic-bezier(.2,.7,.2,1)"
+        const INOUT = "cubic-bezier(.65,0,.35,1)"
+        const slides = [...doc.querySelectorAll(".slide")]
+        // 白い面の開閉に1.2秒かかるので、指定がそれより短くても2秒は取る
+        const seconds = (slide, i) => (slide.dataset.seconds ? Math.max(2, Number(slide.dataset.seconds) || 0) : i === 0 ? 3.4 : i === slides.length - 1 ? 4.6 : 5.6)
+        const start = []
+        let t = 0
+        slides.forEach((slide, i) => {
+          start.push(t)
+          t += seconds(slide, i) * 1000
+        })
+        const total = t
+
+        const enter = (el, delay, from, dur = 650, easing = EASE) => el?.animate([from, {}], { delay, duration: dur, fill: "both", easing })
+        // 出て、とどまり、消えるまでを1本の動きにする
+        const life = (el, s, e, inDur, outDur, from, rest, to) => {
+          const d = e - s
+          const frames = [{ ...from, offset: 0, easing: INOUT }, { ...rest, offset: inDur / d }]
+          if (to) frames.push({ ...rest, offset: 1 - outDur / d, easing: INOUT }, { ...to, offset: 1 })
+          else frames.push({ ...rest, offset: 1 })
+          el.animate(frames, { delay: s, duration: d, fill: "both" })
+        }
+
+        slides.forEach((slide, i) => {
+          const s = start[i]
+          const last = i === slides.length - 1
+          const e = last ? total : start[i + 1] + 100
+          slide.style.zIndex = String(i + 1)
+          life(slide, s, e, 1, 1, { opacity: 0 }, { opacity: 1 }, last ? null : { opacity: 0 })
+
+          const panel = slide.querySelector(".panel")
+          if (panel) {
+            life(panel, s, e, 750, 450, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)" }, last ? null : { clipPath: "inset(100% 0 0% 0)" })
+            panel.querySelectorAll("h2, .tbl li, .big, .txt, .sub, .pts li").forEach((el, k) => enter(el, s + 550 + k * 200, { opacity: 0, transform: "translateX(-28px)" }, 600))
+            enter(slide.querySelector(".foot"), s + 300, { opacity: 0 }, 500)
+            slide.querySelectorAll("mark").forEach((m, k) => enter(m, s + 2200 + k * 500, { backgroundSize: "0% 100%" }, 700, INOUT))
+          } else if (slide.classList.contains("cover")) {
+            // 絵のまわりの線（box-shadow）まで見せるので、切り抜きは外側に20px広げる
+            slide.querySelector(".cover__painting")?.animate([{ clipPath: "inset(100% -20px -20px -20px)" }, { clipPath: "inset(-20px -20px -20px -20px)" }], { delay: s + 500, duration: 1300, fill: "both", easing: INOUT })
+            enter(slide.querySelector(".cover__kicker"), s + 1500, { opacity: 0, letterSpacing: "0.6em", textIndent: "0.6em" }, 900)
+            enter(slide.querySelector("h1"), s + 1800, { opacity: 0, transform: "translateY(30px)" }, 800)
+          } else {
+            enter(slide.querySelector(".guide__logo"), s + 200, { opacity: 0, transform: "scale(.9)" }, 900)
+            enter(slide.querySelector("h1"), s + 700, { opacity: 0, transform: "translateY(30px)" }, 800)
+            enter(slide.querySelector(".guide__text"), s + 1100, { opacity: 0 }, 800)
+            enter(slide.querySelector(".search"), s + 1500, { clipPath: "inset(0 100% 0 0)" }, 900, INOUT)
+          }
+        })
+
+        // 金の枠は全部の面で同じなので、1本だけ置いて最初に描く
+        doc.querySelector(".stage").insertAdjacentHTML("beforeend", GFRAME)
+        enter(doc.querySelector(".gframe rect"), 0, { strokeDashoffset: 1 }, 1500, INOUT)
+
+        const anims = doc.getAnimations()
+        const seek = (ms) =>
+          anims.forEach((a) => {
+            a.pause()
+            a.currentTime = ms
+          })
+        seek(0)
+
+        // その時刻の動きの値を、SVGに渡すCSSにする
+        const targets = [...new Set(anims.map((a) => a.effect.target))]
+        const skip = new Set(["offset", "computedOffset", "easing", "composite"])
+        const props = targets.map((el) => [
+          ...new Set(
+            anims
+              .filter((a) => a.effect.target === el)
+              .flatMap((a) => a.effect.getKeyframes().flatMap(Object.keys))
+              .filter((key) => !skip.has(key))
+              .map((key) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)),
+          ),
+        ])
+        targets.forEach((el, i) => el.setAttribute("data-k", i))
+        const view = doc.defaultView
+        const css = () =>
+          targets
+            .map((el, i) => {
+              const cs = view.getComputedStyle(el)
+              const rules = props[i].map((p) => `${p}: ${cs.getPropertyValue(p)} !important`)
+              if (el.classList.contains("slide") && cs.opacity === "0") rules.push("display: none !important")
+              return `[data-k="${i}"] { ${rules.join("; ")} }`
+            })
+            .join("\n")
+
+        let timer
+        const play = () => {
+          clearTimeout(timer)
+          anims.forEach((a) => {
+            a.currentTime = 0
+            a.play()
+          })
+          timer = setTimeout(play, total + 1200)
+        }
+        const stop = () => {
+          clearTimeout(timer)
+          seek(0)
+        }
+        return { total, seek, css, play, stop }
+      }
+
+      // ---- 読み込み。読み込みと動画づくりは同時に1つだけ行う ----
+      let post = null
+      let busy = false
+
+      async function load(items) {
+        if (busy) return
+        busy = true
+        state("busy")
+        $("result").hidden = true
+        post?.reel.stop()
+        post = null
+        say("読み込んでいます")
+        try {
+          await ready
+          const files = await collect(items)
+          const htmls = files.filter((file) => /\.html?$/i.test(file.name))
+          const html = htmls.find((file) => file.name === "post.html") ?? htmls[0]
+          if (!html) throw new Error("post.html が見つかりません。")
+          const images = files.filter((file) => IMAGE.test(file.name))
+
+          const doc = new DOMParser().parseFromString(await html.text(), "text/html")
+          const { slides, paintings } = clean(doc)
+          if (!slides.length) throw new Error("post.html に面がありません。")
+          if (doc.querySelectorAll(".slide.cover").length > 1) throw new Error("表紙が2枚あります。紺か生成りのどちらか1枚だけを残すよう、AIに頼んでください。")
+          if (doc.querySelector(".slide.cover:not(:has(.cover__painting))")) throw new Error("表紙に絵の場所がありません。ひな形の表紙を写し直すよう、AIに頼んでください。")
+          const sources = paintings.map((p) => {
+            if (!p.name) throw new Error("表紙の絵のファイル名が post.html に書かれていません。ひな形どおり background-image で指すよう、AIに頼んでください。")
+            const file = images.find((image) => image.name === p.name) ?? (images.length === 1 ? images[0] : null)
+            if (!file) throw new Error(`表紙の絵（${p.name}）が見つかりません。post.html と一緒にドロップしてください。`)
+            return file
+          })
+
+          const fonts = await fontCss(slides.map((slide) => slide.textContent).join(""))
+          const css = `${fonts}\n${CSS}`
+          const work = await mount($("work"), slides.map((slide) => slide.outerHTML).join(""), `${css}\n${ONE_CSS}`)
+          const workSlides = [...work.querySelectorAll(".slide")]
+          const workPaintings = [...work.querySelectorAll(".cover__painting")]
+          for (const [i, p] of paintings.entries()) {
+            const el = workPaintings[i]
+            const { width, height } = el.getBoundingClientRect()
+            el.style.backgroundImage = `url("${await fitImage(sources[i], width, height)}")`
+            el.style.backgroundPosition = p.position
+          }
+
+          const bad = check(work)
+          const pngs = []
+          const thumbs = []
+          for (const slide of workSlides) {
+            const png = await slidePng(slide, `${css}\n${ONE_CSS}`)
+            pngs.push(png)
+            const img = document.createElement("img")
+            img.src = URL.createObjectURL(png)
+            img.alt = ""
+            thumbs.push(img)
+          }
+          for (const img of $("slides").querySelectorAll("img")) URL.revokeObjectURL(img.src)
+          $("slides").replaceChildren(...thumbs)
+
+          workSlides.forEach((slide) => slide.classList.remove("is-overflow"))
+          const stage = `<div class="stage">${workSlides.map((slide) => slide.outerHTML).join("")}</div>`
+          const reelDoc = await mount($("reel"), stage, `${css}\n${REEL_CSS}`)
+          const reel = animate(reelDoc)
+          const title = work.querySelector(".cover h1")?.textContent.replace(/[\s/\\:*?"<>|]/g, "") || "instagram"
+          post = { pngs, reel, title, ok: !bad.length, css: `${css}\n${REEL_CSS}`, stage: new XMLSerializer().serializeToString(reelDoc.querySelector(".stage")) }
+
+          $("result").hidden = false
+          reel.play()
+          $("save-images").disabled = $("save-reel").disabled = !post.ok
+          if (bad.length) {
+            say(`赤い枠の面（${bad.join("・")}枚目）は、文が収まっていません。AIに文を短くしてもらってから、もう一度ドロップしてください。`, true)
+            state("overflow")
+          } else {
+            say(`${workSlides.length}枚の面を読み込みました。`)
+            state("ready")
+          }
+        } catch (error) {
+          console.error(error)
+          say(error.message, true)
+          state("error")
+        } finally {
+          busy = false
+        }
+      }
+
+      // ---- 保存 ----
+      function save(blob, name) {
+        const a = document.createElement("a")
+        a.href = URL.createObjectURL(blob)
+        a.download = name
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(a.href), 60_000)
+      }
+
+      $("save-images").onclick = () => {
+        if (busy || !post?.ok) return
+        post.pngs.forEach((png, i) => save(png, `${post.title}-${String(i + 1).padStart(2, "0")}.png`))
+      }
+
+      $("save-reel").onclick = async () => {
+        if (busy || !post?.ok) return
+        busy = true
+        const current = post
+        const { reel } = current
+        state("busy")
+        $("save-images").disabled = $("save-reel").disabled = true
+        reel.stop()
+        let output
+        try {
+          const { Output, Mp4OutputFormat, BufferTarget, CanvasSource, QUALITY_HIGH, canEncodeVideo } = await import(MEDIABUNNY)
+          if (!(await canEncodeVideo("avc", { width: W, height: REEL_H }))) throw new Error("このブラウザでは動画を作れません。パソコンのChromeで開いてください。")
+          const canvas = document.createElement("canvas")
+          canvas.width = W
+          canvas.height = REEL_H
+          const ctx = canvas.getContext("2d")
+          output = new Output({ format: new Mp4OutputFormat({ fastStart: "in-memory" }), target: new BufferTarget() })
+          const source = new CanvasSource(canvas, { codec: "avc", bitrate: QUALITY_HIGH })
+          output.addVideoTrack(source, { frameRate: FPS })
+          await output.start()
+
+          const head = encodeURIComponent(svgHead(W, REEL_H, current.css))
+          const tail = encodeURIComponent("</style>" + current.stage + SVG_TAIL)
+          const frames = Math.round((reel.total / 1000) * FPS)
+          let last = ""
+          for (let f = 0; f < frames; f++) {
+            reel.seek((f * 1000) / FPS)
+            const css = reel.css()
+            if (css !== last) await draw(ctx, "data:image/svg+xml;charset=utf-8," + head + encodeURIComponent(xml("\n" + css)) + tail)
+            last = css
+            await source.add(f / FPS, 1 / FPS)
+            if (f % 10 === 0) say(`動画を作っています　${Math.round((f / frames) * 100)}%`)
+          }
+          await output.finalize()
+          save(new Blob([output.target.buffer], { type: "video/mp4" }), `${current.title}-reel.mp4`)
+          say(`動画を保存しました（${(reel.total / 1000).toFixed(1)}秒）。`)
+          state("ready")
+        } catch (error) {
+          console.error(error)
+          if (output?.state === "started") await output.cancel().catch(() => {})
+          say(error.message, true)
+          state("error")
+        } finally {
+          $("save-images").disabled = $("save-reel").disabled = false
+          reel.play()
+          busy = false
+        }
+      }
+
+      // ---- ドロップ。枠の外に落としても読み込み、ブラウザがファイルを開いてしまわないようにする ----
+      const drop = $("drop")
+      window.addEventListener("dragover", (event) => {
+        event.preventDefault()
+        drop.classList.add("is-over")
+      })
+      window.addEventListener("dragleave", (event) => {
+        if (!event.relatedTarget) drop.classList.remove("is-over")
+      })
+      window.addEventListener("drop", (event) => {
+        event.preventDefault()
+        drop.classList.remove("is-over")
+        // 中身はドロップした瞬間にしか読めないので、先に取り出しておく
+        const items = [...event.dataTransfer.items].map((item) => item.webkitGetAsEntry() ?? item.getAsFile()).filter(Boolean)
+        load(items)
+      })
+      // 同じファイルを選び直しても読み込むよう、選んだら空にする
+      $("files").onchange = (event) => {
+        const files = [...event.target.files]
+        event.target.value = ""
+        load(files)
+      }
+
+      ready.then(
+        () => {
+          if (document.body.dataset.state !== "loading") return
+          say("")
+          state("idle")
+        },
+        (error) => {
+          console.error(error)
+          say("準備に失敗しました。ネットにつながっているか確かめて、ページを読み込み直してください。", true)
+          state("error")
+        },
+      )
+    </script>
+  </body>
+</html>

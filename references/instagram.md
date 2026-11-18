@@ -34,13 +34,24 @@
 
 ## 書き出し
 
-`node assets/instagram/render.mjs <post.html>` で、同じフォルダの `output/` にPNGが1枚ずつ出る。Node.jsとplaywrightが要る。書体は `assets/instagram/fonts/` に同梱したものを読み込むので、ネットにつながっていなくても同じ見た目になる。ブラウザで `post.html` を直接開いたときは、Google Fontsから読む。はみ出した面があると、何枚目かを表示して失敗で終わる。
+画像と動画は書き出しページで作る。https://monello-llc.github.io/penbridge-materials/
+
+- `post.html` と表紙の絵をドロップする。フォルダやZIPのままでもよい。
+- ページは `post.html` から面と文と絵のファイル名だけを取り出し、ひな形のCSSで組み直す。AIのファイルにある `<style>`、`style` 属性、スクリプトは使わない。表紙の `background-position` だけは残す。
+- 書体は `assets/instagram/fonts/` に同梱したものを、使う字だけに絞って使う。Google Fontsが配信する書体では字詰めの `palt` が効かず、字の間隔が変わるためである。ブラウザで `post.html` を直接開いたときはGoogle Fontsの書体になるので、書き出したものより字の間隔が少し広い。
+- 次の面には赤い枠が付き、保存できない。
+  - 白い面から文がはみ出した面
+  - 表紙と最後の面で、文が端から76pxより内側に収まっていない面。題が長すぎるときに起きる
+  - 表紙と最後の面で、題が3行以上になった面
+- 動画を作るには、パソコンのChromeが要る。
+
+手元では `node assets/instagram/export.mjs <post.html>` で、同じフォルダの `output/` にPNGが1枚ずつ出る。`--reel` を付けると `output/reel.mp4` も出る。Node.jsとplaywright、Google Chromeが要る。スクリプトは同じ書き出しページを開いて動かすので、出来上がりはページで保存したものと同じになる。はみ出した面があると、赤い枠の付いたPNGを出したうえで、何枚目かを表示して失敗で終わる。
 
 書き出したPNGは必ず開いて見る。確かめるのは、題が2行に収まっているか、絵の主役がアーチに入っているか、単語の途中で不自然に折り返していないかである。
 
 ## リール
 
-`node assets/instagram/reel.mjs <post.html>` で、同じフォルダの `output/reel.mp4` が出る。カルーセルと同じ `post.html` をそのまま使い、動きはスクリプトが付ける。Node.jsとplaywrightに加えて、ffmpegが要る。
+書き出しページの「動画を保存」か、`export.mjs` の `--reel` で作る。カルーセルと同じ `post.html` をそのまま使い、動きはページが付ける。
 
 - 大きさは1080×1920px、音はない。音楽は投稿するときにInstagramで付ける。
 - 1080×1350pxの面を上から240pxの位置に置き、上下は紺にする。下を広く空けるのは、Instagramの文やボタンが重なるからである。
