@@ -73,7 +73,7 @@ PenBridgeは、慶應義塾の中学受験・高校受験を専門にする家�
 - `assets/instagram/post.html`: ひな形。表紙2種、中面3種、最後の面の見本が入っている
 - 書き出しページ: `post.html` と表紙の絵をドロップすると、PNGとリール動画を保存できる。中身はリポジトリ直下の `index.html` である。https://monello-llc.github.io/penbridge-materials/
 - `assets/instagram/export.mjs`: 書き出しページを手元のChromeで動かし、PNGとリール動画を書き出す
-- ChatGPTのコネクタ `penbridge-instagram`: 付いているときは、`get_instagram_template` でひな形と決まりを読み、`export_instagram_post` で書き出す。画像と動画を保存するページのURLが返る
+- ChatGPTのコネクタ `penbridge-instagram`: 付いているときは、`get_instagram_template` に記事のURLを渡して記事の本文とひな形と決まりを読み、`export_instagram_post` で書き出す。画像と動画を保存するページのURLが返る
 - `references/instagram.md`: 表紙の題の長さ、絵の切り取り、蛍光ペンの決まり。作る前に読む
 
 必ず守ることが4つある。ひな形と違う見た目の投稿を出さないためである。
@@ -85,7 +85,7 @@ PenBridgeは、慶應義塾の中学受験・高校受験を専門にする家�
 
 手順は次のとおりである。
 
-1. 記事のURL（`https://penbridge.jp/contents/<slug>`）を受け取り、そのページから本文とカバー画像を取る。カバー画像は、ページのHTMLにある `/api/v1/content/media/content-images/articles/<slug>/cover-…` で始まる画像で、`https://penbridge.jp` を前に付けて落とす。ページを開けない環境や、公開前の記事では、本文とカバー画像を渡してもらう。どちらかがそろわないときは、作る前に聞く。
+1. 記事のURL（`https://penbridge.jp/contents/<slug>`）を受け取り、本文とカバー画像を取る。コネクタが付いているときは、`get_instagram_template` が本文を返し、カバー画像は書き出すときにコネクタが取る。コネクタがないときは、`https://penbridge.jp/api/v1/content/slug/<slug>` のJSONの `bodyMd` を本文とし、`coverImageUrl` の前に `https://penbridge.jp` を付けてカバー画像を落とす。開けない環境や、公開前の記事では、本文とカバー画像を渡してもらう。どちらかがそろわないときは、作る前に聞く。
 2. 各面の題と載せる内容を一覧にして見せ、頼んだ人が確かめてからHTMLを書く。並びは、表紙、中面2〜4枚、最後の面とする。
 3. `assets/instagram/post.html` を新しいフォルダに写し、カバー画像を同じフォルダに置く。表紙は紺か生成りのどちらか1枚を残し、絵のファイル名を書き換える。中面は見本を写して文を入れ、右下のページ数を合わせる。
 4. コネクタが付いているときは、`export_instagram_post` に記事のURLと `post.html` を渡す。表紙の絵はコネクタが記事から取る。はみ出した面があると何枚目かが返るので、その面は文を削るか面を分けて呼び直す。コネクタがなく、スクリプトを動かせる環境では、`node assets/instagram/export.mjs <post.html>` でPNGに書き出し、1枚ずつ開いて確かめる。リールも作るときは `--reel` を付ける。はみ出した面があると、何枚目かを表示して失敗で終わる。その面は文を削るか面を分けて直す。
